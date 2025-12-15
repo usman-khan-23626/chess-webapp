@@ -5,8 +5,9 @@ export const sendresetemail= async (email,resetlink)=>{
 const transporter = nodemailer.createTransport({
     service:"gmail",auth:{
         user:process.env.EMAIL_USER,
-        password:process.env.EMAIL_PASS,
+        pass:process.env.EMAIL_PASS,
     }
+
 });
 
 const mailoption ={
@@ -16,4 +17,5 @@ const mailoption ={
     text:`reset your password ${resetlink}\n link expire in 10 mint`
 };
    await transporter.sendMail(mailoption)
+   return true;
 } 

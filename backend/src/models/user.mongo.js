@@ -6,6 +6,11 @@ const userschema = new mongoose.Schema({
   password: {type: String ,required:true},
   resetPasswordToken: String,
   resetPasswordExpires: Date,
+  chessRating: { type: Number, default: 1000 },
+gamesPlayed: { type: Number, default: 0 },
+gamesWon: { type: Number, default: 0 },
+gamesLost: { type: Number, default: 0 },
+gamesDrawn: { type: Number, default: 0 },
     
 }, { timestamps: true
 });

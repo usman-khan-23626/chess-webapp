@@ -1,17 +1,22 @@
 import express from "express";
 import "dotenv/config";
 import mongoose from "mongoose";
-import userrouter from "./routes/userRouter.js"
+import cookieParser from "cookie-parser";
+import userrouter from "./routes/userRouter.js";
+import gameRouter from "./routes/gameRouter.js";
+import authrouter from "./routes/authRouter.js";
+import dashboard from "./routes/dashboardrouter.js";
 const app = express();
 
 app.use(express.json());
-
+app.use(cookieParser());
 app.get("/",(req,res)=>{
     res.send("welcome to the chess app")
 });
 app.use("/user",userrouter)
-
-
+app.use("/game",gameRouter)
+app.use("/auth",authrouter)
+app.use("/dashboard",dashboard)
 app.listen(7000, async ()=>{
     console.log("running on the port # 7000")
     try {

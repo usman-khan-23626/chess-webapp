@@ -5,7 +5,7 @@ import {User} from "./user.mongo.js"
 export async function creatuser(user){
     try{
         const salt = bcrypt.genSaltSync(10);
-        const hash = bcrypt.hashSync(user.password,salt)
+        const hash = bcrypt.hashSync(user.password,salt);
         const newuser = new User ({
             name : user.name,
             email : user.email,

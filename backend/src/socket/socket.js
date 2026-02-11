@@ -5,10 +5,14 @@ import { makemove } from "../services/chess.service.js";
 export const initializeSocket = (server) => {
     const io = new Server(server, {
         cors: {
-            origin: "http://localhost:5173",
+            origin: (origin, callback) => {
+                // Allow any origin during development to facilitate cross-device testing
+                callback(null, true);
+            },
             credentials: true
         }
     });
+
 
     io.on("connection", (socket) => {
         console.log("A user connected:", socket.id);
@@ -47,28 +51,41 @@ export const initializeSocket = (server) => {
         });
 
         socket.on("move", async ({ gameId, from, to, promotion, userId }) => {
+            console.log(`Move attempt in game ${gameId} by user ${userId}: ${from} -> ${to}`);
+
             try {
                 const game = await Game.findById(gameId);
                 if (!game) {
+                    console.error("Game not found:", gameId);
                     return socket.emit("error", { message: "Game not found" });
                 }
 
                 if (game.status !== 'active') {
+                    console.warn("Game not active:", gameId, "Status:", game.status);
                     return socket.emit("error", { message: "Game not active" });
                 }
 
-                // Verify it's the player's turn (simplified check for now)
-                const userColor = game.whitePlayer.equals(userId) ? 'white' : 'black';
+                // Verify it's the player's turn 
+                const isWhite = game.whitePlayer.toString() === userId.toString();
+                const isBlack = game.blackPlayer.toString() === userId.toString();
+
+                if (!isWhite && !isBlack) {
+                    return socket.emit("error", { message: "You are not a player in this game!" });
+                }
+
+                const userColor = isWhite ? 'white' : 'black';
                 if (userColor !== game.currentTurn) {
                     return socket.emit("error", { message: "Not your turn!" });
                 }
 
-                const moveString = promotion ? `${from}-${to}=${promotion}` : `${from}-${to}`;
-                const moveResult = makemove(game.fen, moveString);
+                const moveResult = makemove(game.fen, { from, to, promotion });
 
                 if (!moveResult.success) {
+                    console.warn("Invalid move attempt:", moveResult.error);
                     return socket.emit("error", { message: moveResult.error });
                 }
+
+                console.log("Move success, updating state...");
 
                 // Update game in DB
                 game.fen = moveResult.fen;

@@ -4,9 +4,11 @@ import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { io } from 'socket.io-client';
 import axios from 'axios';
+import { API_BASE_URL } from './apiConfig';
 
 // Initialize socket once outside to avoid multiple connections
-const socket = io('http://localhost:7000', {
+const socket = io(API_BASE_URL, {
+
     withCredentials: true,
     autoConnect: false
 });
@@ -71,21 +73,57 @@ function Game() {
         // Fetch initial game details to determine color
         const fetchGameDetails = async () => {
             try {
-                const response = await axios.get(`http://localhost:7000/game/${gameId}`, {
+                const response = await axios.get(`${API_BASE_URL}/game/${gameId}`, {
                     withCredentials: true
                 });
+
                 const gameData = response.data.game;
+                console.log("Game loaded:", gameData);
+                console.log("Current user from localStorage:", storedUser);
+
+                // Fully sync state from backend
+                const loadedGame = new Chess(gameData.fen);
+                setGame(loadedGame);
+                setTurn(gameData.currentTurn);
+                setStatus(gameData.status);
                 setWhitePlayer(gameData.whitePlayer);
                 setBlackPlayer(gameData.blackPlayer);
-                if (gameData.whitePlayer._id === storedUser._id) {
+
+                // Determine if game is over
+                if (gameData.status === 'checkmate' || gameData.status === 'draw') {
+                    setGameOver(true);
+                    setWinner(gameData.winner);
+                }
+
+                // Robust color assignment
+                const userId = String(storedUser._id);
+                // Handle cases where player object might be populated or just an ID string
+                const whiteId = String(gameData.whitePlayer?._id || gameData.whitePlayer);
+                const blackId = String(gameData.blackPlayer?._id || gameData.blackPlayer);
+
+                console.log("Color Identification Log:", {
+                    userId,
+                    whiteId,
+                    blackId,
+                    matchWhite: whiteId === userId,
+                    matchBlack: blackId === userId
+                });
+
+                if (whiteId === userId) {
+                    console.log("Assigned: White");
                     setPlayerColor('white');
-                } else if (gameData.blackPlayer?._id === storedUser._id) {
+                } else if (blackId === userId) {
+                    console.log("Assigned: Black");
                     setPlayerColor('black');
+                } else {
+                    console.warn("Spectator mode: User ID not found in players", { userId, whiteId, blackId });
+                    setPlayerColor(null);
                 }
             } catch (error) {
                 console.error("Failed to fetch game details:", error);
             }
         };
+
         fetchGameDetails();
 
         return () => {
@@ -98,8 +136,14 @@ function Game() {
     }, [gameId, navigate, updateGameState]);
 
     function onDrop(sourceSquare, targetSquare) {
+        console.log("OnDrop triggered:", { sourceSquare, targetSquare, turn, playerColor, gameOver });
         if (gameOver) return false;
-        if (turn !== playerColor) return false;
+
+        // Block moves if it's not the player's turn or if color isn't assigned yet
+        if (!playerColor || turn !== playerColor) {
+            console.warn("Move blocked: Not your turn or color not assigned", { turn, playerColor });
+            return false;
+        }
 
         try {
             const move = {
@@ -112,6 +156,10 @@ function Game() {
             const result = gameCopy.move(move);
 
             if (result) {
+                console.log("Local move valid, emitting to server...");
+                // Optimistic update: update the board locally before server confirms
+                setGame(gameCopy);
+
                 socket.emit('move', {
                     gameId,
                     from: sourceSquare,
@@ -120,12 +168,16 @@ function Game() {
                     userId: user._id
                 });
                 return true;
+            } else {
+                console.warn("Local move invalid according to chess.js");
             }
         } catch (e) {
+            console.error("Error during onDrop move execution:", e);
             return false;
         }
         return false;
     }
+
 
     return (
         <div className="auth-container" style={{ overflow: 'hidden' }}>

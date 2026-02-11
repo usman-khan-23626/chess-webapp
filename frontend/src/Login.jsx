@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from './apiConfig';
+
 
 function Login() {
     const [formData, setFormData] = useState({
@@ -25,9 +27,10 @@ function Login() {
         setError('');
 
         try {
-            const response = await axios.post('http://localhost:7000/user/login', formData, {
+            const response = await axios.post(`${API_BASE_URL}/user/login`, formData, {
                 withCredentials: true
             });
+
 
             if (response.data) {
                 // Store user info for Socket.IO and UI

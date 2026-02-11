@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from './apiConfig';
+
 
 function Dashboard() {
     const [availableGames, setAvailableGames] = useState([]);
@@ -13,9 +15,10 @@ function Dashboard() {
 
     const fetchAvailableGames = async () => {
         try {
-            const response = await axios.get('http://localhost:7000/game/available', {
+            const response = await axios.get(`${API_BASE_URL}/game/available`, {
                 withCredentials: true
             });
+
             setAvailableGames(response.data.games);
         } catch (error) {
             console.error("Failed to fetch games:", error);
@@ -25,9 +28,10 @@ function Dashboard() {
     const handleCreateGame = async () => {
         setLoading(true);
         try {
-            const response = await axios.post('http://localhost:7000/game/create', {}, {
+            const response = await axios.post(`${API_BASE_URL}/game/create`, {}, {
                 withCredentials: true
             });
+
             if (response.data.success) {
                 navigate(`/game/${response.data.gameId}`);
             }
@@ -40,9 +44,10 @@ function Dashboard() {
 
     const handleJoinGame = async (gameId) => {
         try {
-            const response = await axios.post(`http://localhost:7000/game/join/${gameId}`, {}, {
+            const response = await axios.post(`${API_BASE_URL}/game/join/${gameId}`, {}, {
                 withCredentials: true
             });
+
             if (response.data.success) {
                 navigate(`/game/${gameId}`);
             }

@@ -1,19 +1,28 @@
 import { Chess } from "chess.js"
 
-export function createnewgame(){
+export function createnewgame() {
     const chess = new Chess();
-    return({
-        fen:chess.fen(),
-        pgn :chess.pgn(),
+    return ({
+        fen: chess.fen(),
+        pgn: chess.pgn(),
         turn: 'white'
     });
 }
-export function makemove(currentfen,move){
-    try{const chess = new Chess(currentfen);
-    const result = chess.move(move);
+export function makemove(currentfen, move) {
+    try {
+        const chess = new Chess(currentfen);
+        // chess.js 1.x move() accepts move objects {from, to, promotion} or SAN strings
+        const result = chess.move(move);
 
-    return({
-          success: true,
+        if (!result) {
+            return {
+                success: false,
+                error: "Invalid move"
+            };
+        }
+
+        return ({
+            success: true,
             fen: chess.fen(),
             pgn: chess.pgn(),
             turn: chess.turn() === 'w' ? 'white' : 'black',
@@ -23,16 +32,17 @@ export function makemove(currentfen,move){
             checkmate: chess.isCheckmate(),
             stalemate: chess.isStalemate(),
             draw: chess.isDraw()
-    });}catch(error){
-    console.error("Move failed", error); 
-      return { 
-        success: false,
-        error: error.message 
-    }
+        });
+    } catch (error) {
+        console.error("Move failed", error);
+        return {
+            success: false,
+            error: error.message
+        }
     }
 }
 
-export function  getGameStatus(fen) {
+export function getGameStatus(fen) {
     const chess = new Chess(fen);
     return {
         fen: chess.fen(),

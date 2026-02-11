@@ -1,4 +1,6 @@
 import express from "express";
+import os from "os";
+
 import "dotenv/config";
 import http from "http";
 import { initializeSocket } from "./socket/socket.js";
@@ -17,9 +19,13 @@ const server = http.createServer(app);
 initializeSocket(server);
 
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: (origin, callback) => {
+        // In local network development, allow any origin to facilitate access from other devices
+        callback(null, true);
+    },
     credentials: true
 }));
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -37,12 +43,28 @@ app.use("/game", gameRouter);
 app.use("/auth", authrouter);
 app.use("/dashboard", dashboard);
 
-server.listen(7000, async () => {
-    console.log("server is running on the port # 7000")
+const PORT = process.env.PORT || 7000;
+
+server.listen(PORT, async () => {
+    console.log(`server is running on the port # ${PORT}`)
     try {
         await mongoose.connect(process.env.DB_URL)
         console.log("succesfully connected to the database")
+
+        // Log local IP address for other devices
+        const networkInterfaces = os.networkInterfaces();
+        console.log("\nAccess the app from other devices using:");
+        for (const interfaceName in networkInterfaces) {
+            for (const networkInterface of networkInterfaces[interfaceName]) {
+                if (networkInterface.family === 'IPv4' && !networkInterface.internal) {
+                    console.log(`- Frontend: http://${networkInterface.address}:5173`);
+                    console.log(`- Backend:  http://${networkInterface.address}:${PORT}`);
+                }
+            }
+        }
+        console.log("");
     } catch (error) {
+
         console.error("not connected error :", error)
     }
 });

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from './apiConfig';
+
 
 function Signup() {
     const [formData, setFormData] = useState({
@@ -41,11 +43,12 @@ function Signup() {
         }
 
         try {
-            const response = await axios.post('http://localhost:7000/user/signup', {
+            const response = await axios.post(`${API_BASE_URL}/user/signup`, {
                 name: formData.username,
                 email: formData.email,
                 password: formData.password
             });
+
 
             if (response.data) {
                 // Redirect to login page

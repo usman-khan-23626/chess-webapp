@@ -43,7 +43,7 @@ app.use("/game", gameRouter);
 app.use("/auth", authrouter);
 app.use("/dashboard", dashboard);
 
-const PORT = process.env.PORT || 7000;
+const PORT = process.env.PORT || 9000;
 
 server.listen(PORT, async () => {
     console.log(`server is running on the port # ${PORT}`)
